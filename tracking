@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<title>Control de Gastos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --border: #E2DED6;
+    --text: #1A1814;
+    --muted: #8A8278;
+    --hint: #B8B2A8;
+    --alquiler: #85B7EB;
+    --mercado: #AFA9EC;
+    --transporte: #378ADD;
+    --otros: #F5C870;
+    --danger: #E24B4A;
+    --warn: #EF9F27;
+    --ok: #1D9E75;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--bg); }
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--text);
+    color: var(--bg);
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .header h1 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 300; letter-spacing: -0.5px; }
+  .header h1 span { font-style: italic; }
+  .month-badge {
+    font-size: 11px;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    display: inline-block;
+  }
+
+  /* SUMMARY BAR */
+  .summary {
+    padding: 16px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-nums { display: flex; gap: 0; margin-bottom: 14px; }
+  .sum-item { flex: 1; text-align: center; }
+  .sum-item + .sum-item { border-left: 1px solid var(--border); }
+  .sum-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3px; }
+  .sum-val { font-size: 20px; font-weight: 500; }
+  .sum-val.danger { color: var(--danger); }
+  .sum-val.ok { color: var(--ok); }
+
+  .cat-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 99px; padding: 4px 10px 4px 7px;
+    font-size: 11px; color: var(--muted);
+  }
+  .pill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .pill strong { color: var(--text); font-weight: 500; }
+
+  /* PROGRESS BARS */
+  .progress-section { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .prog-row { display: flex; flex-direction: column; gap: 5px; }
+  .prog-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .prog-meta strong { color: var(--text); font-size: 12px; }
+  .prog-track { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 99px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; padding: 12px 20px 0; border-top: 1px solid var(--border); }
+  .tab {
+    flex: 1; padding: 9px 4px; font-size: 12px; font-family: 'DM Mono', monospace;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: transparent; color: var(--muted); cursor: pointer;
+    letter-spacing: 0.04em; transition: all 0.15s;
+  }
+  .tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* SECTION */
+  .section { padding: 16px 20px; }
+  .section-label {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 12px;
+  }
+
+  /* ADD FORM */
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  select, input[type=text], input[type=number] {
+    width: 100%; padding: 11px 12px; font-size: 15px;
+    font-family: 'DM Mono', monospace;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--bg); color: var(--text);
+    appearance: none; -webkit-appearance: none;
+    outline: none; transition: border-color 0.15s;
+  }
+  select:focus, input:focus { border-color: var(--text); }
+  .btn-add {
+    padding: 13px; font-size: 14px; font-family: 'DM Mono', monospace;
+    background: var(--text); color: var(--bg);
+    border: none; border-radius: var(--radius-sm);
+    cursor: pointer; font-weight: 500; letter-spacing: 0.04em;
+    transition: opacity 0.15s; active: opacity 0.7;
+  }
+  .btn-add:active { opacity: 0.75; transform: scale(0.98); }
+
+  /* EXPENSE LIST */
+  .expense-list { display: flex; flex-direction: column; gap: 6px; }
+  .exp-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .exp-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .exp-info { flex: 1; min-width: 0; }
+  .exp-desc { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .exp-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .exp-amount { font-size: 15px; font-weight: 500; flex-shrink: 0; }
+  .exp-del {
+    font-size: 11px; color: var(--hint); cursor: pointer;
+    padding: 3px 7px; border-radius: var(--radius-sm);
+    border: 1px solid transparent; transition: all 0.15s;
+  }
+  .exp-del:hover, .exp-del:active { background: #FEE; border-color: #FCC; color: var(--danger); }
+
+  /* CSV SECTION */
+  .csv-actions { display: flex; flex-direction: column; gap: 8px; }
+  .btn-csv {
+    padding: 12px 16px; font-size: 13px; font-family: 'DM Mono', monospace;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--text);
+    cursor: pointer; text-align: left; letter-spacing: 0.02em;
+    display: flex; align-items: center; gap: 10px; transition: all 0.15s;
+  }
+  .btn-csv:active { background: var(--bg); }
+  .btn-csv .ico { font-size: 18px; }
+  .btn-csv .lbl { font-size: 12px; color: var(--muted); display: block; margin-top: 1px; }
+  .btn-export { border-color: var(--ok); }
+  .btn-export .ico { color: var(--ok); }
+  .btn-import { }
+  .file-input { display: none; }
+
+  .empty { text-align: center; padding: 2rem; color: var(--hint); font-size: 13px; }
+  .divider { height: 1px; background: var(--border); margin: 0 20px; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 10px 20px;
+    border-radius: 99px; font-size: 13px; z-index: 100;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* BUDGET EDIT */
+  .budget-grid { display: flex; flex-direction: column; gap: 8px; }
+  .budget-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+  }
+  .budget-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .budget-name { flex: 1; font-size: 13px; }
+  .budget-input {
+    width: 90px; padding: 6px 8px; font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--bg); color: var(--text); text-align: right;
+    outline: none;
+  }
+  .budget-input:focus { border-color: var(--text); }
+  .btn-save-budget {
+    width: 100%; padding: 12px; margin-top: 8px; font-size: 13px;
+    font-family: 'DM Mono', monospace; background: var(--text); color: var(--bg);
+    border: none; border-radius: var(--radius-sm); cursor: pointer;
+    font-weight: 500; letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>mis <span>gastos</span></h1>
+    <span class="month-badge" id="month-label">abr 2026</span>
+  </div>
+</div>
+
+<div class="summary">
+  <div class="summary-nums" id="sum-nums"></div>
+  <div class="cat-pills" id="cat-pills"></div>
+</div>
+
+<div class="progress-section" id="progress-section"></div>
+<div class="divider"></div>
+
+<div class="tabs" style="border-top:none; padding-top:12px; margin-top:4px;">
+  <button class="tab active" onclick="showTab('add',this)">+ añadir</button>
+  <button class="tab" onclick="showTab('lista',this)">lista</button>
+  <button class="tab" onclick="showTab('csv',this)">csv</button>
+  <button class="tab" onclick="showTab('budget',this)">budget</button>
+</div>
+
+<!-- ADD -->
+<div id="tab-add" class="section">
+  <div class="section-label">nuevo gasto</div>
+  <div class="form-card">
+    <select id="cat">
+      <option value="Alquiler">Alquiler</option>
+      <option value="Mercado">Mercado</option>
+      <option value="Transporte">Transporte</option>
+      <option value="Otros">Otros gastos</option>
+    </select>
+    <div class="form-row">
+      <input type="number" id="amount" placeholder="0,00 €" step="0.01" min="0" inputmode="decimal" />
+      <input type="text" id="date-in" placeholder="hoy" />
+    </div>
+    <input type="text" id="desc" placeholder="descripción (ej: Mercadona)" />
+    <button class="btn-add" onclick="addExpense()">añadir gasto →</button>
+  </div>
+</div>
+
+<!-- LISTA -->
+<div id="tab-lista" class="section" style="display:none">
+  <div class="section-label">todos los gastos</div>
+  <div class="expense-list" id="expense-list"></div>
+</div>
+
+<!-- CSV -->
+<div id="tab-csv" class="section" style="display:none">
+  <div class="section-label">importar / exportar</div>
+  <div class="csv-actions">
+    <button class="btn-csv btn-export" onclick="exportCSV()">
+      <span class="ico">↓</span>
+      <span><strong>Descargar CSV</strong><span class="lbl">Abre en Excel / Google Sheets</span></span>
+    </button>
+    <label class="btn-csv btn-import">
+      <span class="ico">↑</span>
+      <span><strong>Importar CSV</strong><span class="lbl">Carga un CSV exportado anteriormente</span></span>
+      <input type="file" class="file-input" accept=".csv" onchange="importCSV(event)" />
+    </label>
+    <button class="btn-csv" onclick="copyCSV()">
+      <span class="ico">⎘</span>
+      <span><strong>Copiar al portapapeles</strong><span class="lbl">Pega directo en Google Sheets</span></span>
+    </button>
+  </div>
+  <div style="margin-top:16px; font-size:11px; color:var(--muted); line-height:1.7;">
+    Formato del CSV: fecha, categoría, descripción, importe.<br>
+    Puedes abrir el CSV descargado en Google Sheets y pegar las filas en tu hoja.
+  </div>
+</div>
+
+<!-- BUDGET -->
+<div id="tab-budget" class="section" style="display:none">
+  <div class="section-label">presupuestos mensuales</div>
+  <div class="budget-grid" id="budget-grid"></div>
+  <button class="btn-save-budget" onclick="saveBudgets()">guardar presupuestos</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULTS = {
+  Alquiler:   { color: '#85B7EB', budget: 900 },
+  Mercado:    { color: '#AFA9EC', budget: 300 },
+  Transporte: { color: '#378ADD', budget: 65.4 },
+  Otros:      { color: '#F5C870', budget: 168.34 },
+};
+
+const INIT_EXPENSES = [
+  { id:1,  date:'01/04/2026', cat:'Mercado',    desc:'DIA 13921',               amount:2.17 },
+  { id:2,  date:'01/04/2026', cat:'Mercado',    desc:'DIA 13921',               amount:4.14 },
+  { id:3,  date:'02/04/2026', cat:'Otros',      desc:'Peluquería XU',           amount:8.00 },
+  { id:4,  date:'02/04/2026', cat:'Otros',      desc:'Golden Otoao SL',         amount:7.50 },
+  { id:5,  date:'02/04/2026', cat:'Mercado',    desc:'DIA 13921',               amount:7.55 },
+  { id:6,  date:'02/04/2026', cat:'Mercado',    desc:'Mialcampo',               amount:27.13 },
+  { id:7,  date:'06/04/2026', cat:'Mercado',    desc:'DIA 13921',               amount:14.70 },
+  { id:8,  date:'06/04/2026', cat:'Mercado',    desc:'Alimentación',            amount:4.20 },
+  { id:9,  date:'06/04/2026', cat:'Otros',      desc:'Burger King Sanchinarro', amount:31.92 },
+  { id:10, date:'06/04/2026', cat:'Mercado',    desc:'Mercadona Monteburgos',   amount:33.95 },
+  { id:11, date:'06/04/2026', cat:'Otros',      desc:"Domino's Pizza",          amount:19.98 },
+  { id:12, date:'06/04/2026', cat:'Mercado',    desc:'Alimentación',            amount:2.50 },
+  { id:13, date:'06/04/2026', cat:'Otros',      desc:'Dunkin Donuts',           amount:18.50 },
+  { id:14, date:'06/04/2026', cat:'Transporte', desc:'Metro de Madrid',         amount:7.30 },
+  { id:15, date:'06/04/2026', cat:'Transporte', desc:'Metro de Madrid',         amount:3.00 },
+  { id:16, date:'06/04/2026', cat:'Mercado',    desc:'Mialcampo',               amount:6.81 },
+  { id:17, date:'06/04/2026', cat:'Otros',      desc:'Artesanía del Desayuno',  amount:7.15 },
+  { id:18, date:'06/04/2026', cat:'Otros',      desc:'Usera 1',                 amount:2.75 },
+  { id:19, date:'06/04/2026', cat:'Mercado',    desc:'DIA 13921',               amount:2.04 },
+];
+
+let cats = JSON.parse(localStorage.getItem('gl_cats') || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+let expenses = JSON.parse(localStorage.getItem('gl_expenses') || 'null') || INIT_EXPENSES;
+let nextId = Math.max(...expenses.map(e => e.id), 0) + 1;
+
+function save() {
+  localStorage.setItem('gl_cats', JSON.stringify(cats));
+  localStorage.setItem('gl_expenses', JSON.stringify(expenses));
+}
+
+function fmt(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+
+function todayStr() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function barColor(pct, base) {
+  if (pct > 90) return '#E24B4A';
+  if (pct > 70) return '#EF9F27';
+  return base;
+}
+
+function catSpent(cat) { return expenses.filter(e => e.cat === cat).reduce((s,e) => s + e.amount, 0); }
+function totalSpent() { return expenses.reduce((s,e) => s + e.amount, 0); }
+function totalBudget() { return Object.values(cats).reduce((s,c) => s + c.budget, 0); }
+
+function render() {
+  const spent = totalSpent();
+  const budget = totalBudget();
+  const left = budget - spent;
+  const pct = spent / budget * 100;
+
+  // Month label
+  const now = new Date();
+  document.getElementById('month-label').textContent =
+    now.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+
+  // Summary nums
+  document.getElementById('sum-nums').innerHTML = `
+    <div class="sum-item"><div class="sum-label">presupuesto</div><div class="sum-val">${fmt(budget)}</div></div>
+    <div class="sum-item"><div class="sum-label">gastado</div><div class="sum-val ${pct>80?'danger':''}">${fmt(spent)}</div></div>
+    <div class="sum-item"><div class="sum-label">queda</div><div class="sum-val ${left<50?'danger':'ok'}">${fmt(left)}</div></div>
+  `;
+
+  // Pills
+  document.getElementById('cat-pills').innerHTML = Object.entries(cats).map(([cat, info]) => {
+    const s = catSpent(cat);
+    return `<div class="pill"><div class="pill-dot" style="background:${info.color}"></div>${cat} <strong>${fmt(s)}</strong></div>`;
+  }).join('');
+
+  // Progress bars
+  document.getElementById('progress-section').innerHTML = Object.entries(cats).map(([cat, info]) => {
+    const s = catSpent(cat);
+    const p = Math.min(s / info.budget * 100, 100);
+    const col = barColor(p, info.color);
+    return `<div class="prog-row">
+      <div class="prog-meta"><strong>${cat}</strong><span>${fmt(s)} / ${fmt(info.budget)}</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${p}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+
+  // Expense list
+  const list = document.getElementById('expense-list');
+  if (!expenses.length) { list.innerHTML = '<div class="empty">sin gastos registrados</div>'; }
+  else {
+    list.innerHTML = [...expenses].reverse().map(e => `
+      <div class="exp-item">
+        <div class="exp-dot" style="background:${cats[e.cat]?.color||'#888'}"></div>
+        <div class="exp-info">
+          <div class="exp-desc">${e.desc}</div>
+          <div class="exp-meta">${e.date} · ${e.cat}</div>
+        </div>
+        <div class="exp-amount">${fmt(e.amount)}</div>
+        <div class="exp-del" onclick="del(${e.id})">✕</div>
+      </div>
+    `).join('');
+  }
+
+  // Budget grid
+  document.getElementById('budget-grid').innerHTML = Object.entries(cats).map(([cat, info]) => `
+    <div class="budget-row">
+      <div class="budget-dot" style="background:${info.color}"></div>
+      <div class="budget-name">${cat}</div>
+      <input class="budget-input" type="number" step="0.01" value="${info.budget.toFixed(2)}" data-cat="${cat}" />
+    </div>
+  `).join('');
+}
+
+function addExpense() {
+  const cat = document.getElementById('cat').value;
+  const amount = parseFloat(document.getElementById('amount').value);
+  const desc = document.getElementById('desc').value.trim();
+  const dateVal = document.getElementById('date-in').value.trim();
+  const date = dateVal || todayStr();
+  if (!amount || amount <= 0 || !desc) { toast('Rellena importe y descripción'); return; }
+  expenses.push({ id: nextId++, date, cat, desc, amount });
+  save(); render();
+  document.getElementById('amount').value = '';
+  document.getElementById('desc').value = '';
+  document.getElementById('date-in').value = '';
+  toast('Gasto añadido ✓');
+}
+
+function del(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  expenses = expenses.filter(e => e.id !== id);
+  save(); render();
+}
+
+function saveBudgets() {
+  document.querySelectorAll('.budget-input').forEach(inp => {
+    const cat = inp.dataset.cat;
+    const val = parseFloat(inp.value);
+    if (cats[cat] && !isNaN(val)) cats[cat].budget = val;
+  });
+  save(); render();
+  toast('Presupuestos guardados ✓');
+}
+
+function toCSV() {
+  const header = 'fecha,categoria,descripcion,importe\n';
+  const rows = expenses.map(e =>
+    `${e.date},${e.cat},"${e.desc.replace(/"/g,'""')}",${e.amount.toFixed(2)}`
+  ).join('\n');
+  return header + rows;
+}
+
+function exportCSV() {
+  const csv = toCSV();
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `gastos_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV descargado ✓');
+}
+
+function copyCSV() {
+  navigator.clipboard.writeText(toCSV()).then(() => toast('Copiado al portapapeles ✓'));
+}
+
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.trim().split('\n').slice(1);
+    let count = 0;
+    lines.forEach(line => {
+      const parts = line.match(/(".*?"|[^,]+)(?=,|$)/g);
+      if (!parts || parts.length < 4) return;
+      const [date, cat, desc, amount] = parts.map(p => p.replace(/^"|"$/g,'').trim());
+      const amt = parseFloat(amount);
+      if (!isNaN(amt) && Object.keys(cats).includes(cat)) {
+        expenses.push({ id: nextId++, date, cat, desc, amount: amt });
+        count++;
+      }
+    });
+    save(); render();
+    toast(`${count} gastos importados ✓`);
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function showTab(name, btn) {
+  ['add','lista','csv','budget'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// Set today placeholder
+document.getElementById('date-in').placeholder = todayStr();
+render();
+</script>
+</body>
+</html>
